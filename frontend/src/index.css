@@ -1,0 +1,1388 @@
+/* ============================================================================================
+   OPORA · frontend/src/index.css
+   Дизайн-система «Опора», конфігурація КС (Культурні Сили). Tailwind v4, CSS-first.
+
+   Структура файлу (читати зверху вниз):
+     0. @import "tailwindcss" і @font-face (self-host, без CDN — DD-04)
+     1–8. tokens.css r5 — ДОСЛІВНО з дизайн-системи (DD-11: напрям синхронізації один —
+          дизайн-система → код; значення тут руками не міняються, лише повторним перенесенням).
+          Джерело: project/source/tokens.css
+          (S1 ревізія 5, md5 2d5698389e98df18938976220e265b03), 2026-10-26.
+          Три рівні (DD-10): примітиви --op-* → семантика [data-brand][data-theme] → винятки компонентів.
+          Блок 8 `@theme inline` робить із семантики утиліти Tailwind: bg-card, text-muted-foreground,
+          rounded-card, text-h1, shadow-overlay …
+     9. Шар застосунку (цей репозиторій): базові стилі документа,
+        фокус, скелет, прозовий текст висновку AI, перевизначення React Flow (--xy-*).
+
+   Як вмикається набір: атрибути на <html> —
+     data-brand="ks"      — КС (базовий для прототипу; «army» — токени є, компоненти не переносились, рішення 3C 26.10)
+     data-theme="light"   — світла (обов'язково); "dark" — темна, окремий набір значень (DD-23)
+     data-density         — не ставити (авто: 36 px контроли, 44 px на дотику); compact / comfortable — за потреби
+     data-motion="on|off" — рух; prefers-reduced-motion завжди перемагає
+   БЕЗ data-brand шрифт і радіуси не визначені — атрибут обов'язковий (див. docs/design/migration.md, крок 1).
+
+   Іменування: семантичні ролі зі словника shadcn (background / foreground / card / muted / primary /
+   secondary / accent / destructive / border / input / ring) + ролі Опори (status-*-text/bg/border, link,
+   border-accent, inverse*, foreground-tertiary, foreground-disabled, skeleton*). Відповідність до назв
+   із промпта: surface → card, surface-muted → muted, text → foreground, text-muted → muted-foreground.
+   ============================================================================================ */
+@import 'tailwindcss';
+
+/* ============ 0. ШРИФТИ (self-host, DD-04). КС: CY Grotesk Key 400/500/600 (текст) + Grand 600/800 (великі цифри);
+   Армія: UAF Sans 400/500/600/700 (DD-27) — підключені, щоб [data-brand="army"] працював без змін файлу.
+   Ліцензії: CY Grotesk — комерційний, у продакшн лише з веб-ліцензією (X-16); UAF Sans — © ЗСУ, дозвіл на
+   вбудовування «?» (DD-27). Для прототипу на localhost — ок; перед продакшном — документи. Файли: frontend/public/fonts/. ============ */
+@font-face {
+  font-family: 'CY Grotesk Key';
+  src: url('/fonts/CYGrotesk-KeyRegular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'CY Grotesk Key';
+  src: url('/fonts/CYGrotesk-KeyMedium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'CY Grotesk Key';
+  src: url('/fonts/CYGrotesk-KeyDemi.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'CY Grotesk Grand';
+  src: url('/fonts/CYGrotesk-GrandDemi.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'CY Grotesk Grand';
+  src: url('/fonts/CYGrotesk-GrandHeavy.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'UAF Sans';
+  src: url('/fonts/UAFSans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'UAF Sans';
+  src: url('/fonts/UAFSans-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'UAF Sans';
+  src: url('/fonts/UAFSans-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'UAF Sans';
+  src: url('/fonts/UAFSans-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================================================================
+   1–8. tokens.css r5 — GENERATED from design system, не редагувати вручну (DD-11).
+   ============================================================================================ */
+/* Opora design tokens — напрям C «Стрій». S1, ревізія 5 (ЧЕКПОЙНТ 5, 2026-10-21: 14B 16A 18B 19A 20A 22A 23A; скелет S3); ревізія 4 (ЧЕКПОЙНТ 4, 2026-10-21: 1A 2A 3A 4B 5B 6A 7A 8A 9B 10B 11A 12A 13B); ревізія 3: КС = система КС 1:1 (директива 2026-10-20), Army без змін. Ревізія 2 після CHECKPOINT 3 (2026-10-20: 1A 2B 3A 4A 5B 6A 7A 8B 9A 10A 11B; CHECKPOINT 2: 1B 2B 3B 4A 5B 6B 7C 8A 9A 10B). Tailwind v4 CSS-first + shadcn/ui.
+   Три рівні (DD-10): примітиви --op-* у :root → семантика у [data-brand][data-theme] → винятки компонентів.
+   Теми й white-label перевизначають ЛИШЕ семантичний рівень. Значення згенеровано build.py; контраст виміряно contrast.py. */
+
+/* ============ 1. ПРИМІТИВИ (глобальні, не змінюються темою) ============ */
+:root {
+  /* olive: H≈93° */
+  --op-olive-0: #ffffff; /* oklch(100.0% 0.000 0) */
+  --op-olive-50: #faf9f3; /* oklch(98.1% 0.008 99) */
+  --op-olive-100: #f1efe6; /* oklch(95.1% 0.012 96) */
+  --op-olive-150: #e7e3d4; /* oklch(91.5% 0.021 95) */
+  --op-olive-200: #d3cdb6; /* oklch(84.7% 0.032 95) */
+  --op-olive-300: #b8ac8f; /* oklch(74.7% 0.042 88) */
+  --op-olive-350: #aea893; /* oklch(73.1% 0.030 94) */
+  --op-olive-375: #918764; /* oklch(62.3% 0.051 94) */
+  --op-olive-400: #8f8972; /* oklch(62.9% 0.034 95) */
+  --op-olive-500: #7d7764; /* oklch(56.9% 0.029 93) */
+  --op-olive-450: #756635; /* oklch(51.3% 0.070 93) */
+  --op-olive-600: #636053; /* oklch(48.8% 0.020 96) */
+  --op-olive-650: #5a5952; /* oklch(46.3% 0.011 100) */
+  --op-olive-675: #564f3d; /* oklch(42.9% 0.030 89) */
+  --op-olive-700: #4d4634; /* oklch(39.6% 0.030 89) */
+  --op-olive-725: #4a4530; /* oklch(38.9% 0.034 96) */
+  --op-olive-750: #3f3c33; /* oklch(35.6% 0.016 92) */
+  --op-olive-850: #34322c; /* oklch(31.7% 0.011 92) */
+  --op-olive-900: #2c2a25; /* oklch(28.5% 0.009 89) */
+  --op-olive-950: #23221e; /* oklch(25.2% 0.008 95) */
+  /* sand: H≈85° */
+  --op-sand-50: #ffefcd; /* oklch(95.6% 0.048 86) */
+  --op-sand-100: #efdbb2; /* oklch(89.8% 0.058 85) */
+  --op-sand-150: #dfcca3; /* oklch(85.1% 0.058 86) */
+  --op-sand-200: #d2bf97; /* oklch(81.1% 0.058 86) */
+  /* orange: H≈65° */
+  --op-orange-500: #f39200; /* oklch(74.5% 0.167 65) */
+  --op-orange-525: #df8600; /* oklch(69.9% 0.157 65) */
+  --op-orange-550: #cf7c00; /* oklch(66.1% 0.148 65) */
+  --op-orange-600: #c37400; /* oklch(63.1% 0.142 65) */
+  /* green: H≈134° */
+  --op-green-50: #dce8cc; /* oklch(91.4% 0.039 126) */
+  --op-green-300: #9bc27a; /* oklch(76.8% 0.106 132) */
+  --op-green-400: #6e9a4f; /* oklch(63.6% 0.115 134) */
+  --op-green-450: #61943d; /* oklch(61.1% 0.131 134) */
+  --op-green-500: #5f8a40; /* oklch(58.4% 0.114 134) */
+  --op-green-600: #3e7400; /* oklch(50.1% 0.144 134) */
+  --op-green-700: #3f6b2a; /* oklch(48.0% 0.107 137) */
+  --op-green-900: #2a3324; /* oklch(30.8% 0.029 133) */
+  /* amber: H≈85° */
+  --op-amber-50: #f9e58a; /* oklch(91.9% 0.114 97) */
+  --op-amber-100: #f6e3a3; /* oklch(91.6% 0.084 94) */
+  --op-amber-300: #e9c95a; /* oklch(84.2% 0.134 93) */
+  --op-amber-500: #b7791f; /* oklch(62.6% 0.125 70) */
+  --op-amber-700: #7a5200; /* oklch(47.1% 0.099 76) */
+  --op-amber-900: #3a3214; /* oklch(31.8% 0.047 95) */
+  --op-amber-950: #3a2f0c; /* oklch(30.9% 0.053 91) */
+  /* red: H≈27° */
+  --op-red-50: #f8dedc; /* oklch(92.1% 0.029 23) */
+  --op-red-100: #f3d9d5; /* oklch(90.6% 0.029 28) */
+  --op-red-300: #f08a83; /* oklch(74.1% 0.125 25) */
+  --op-red-350: #e8766e; /* oklch(69.5% 0.143 26) */
+  --op-red-500: #d8433b; /* oklch(59.6% 0.187 27) */
+  --op-red-600: #b0302a; /* oklch(50.6% 0.166 27) */
+  --op-red-625: #b5261f; /* oklch(50.5% 0.180 28) */
+  --op-red-700: #a32b25; /* oklch(47.7% 0.157 28) */
+  --op-red-900: #3d211e; /* oklch(28.4% 0.044 27) */
+  --op-red-950: #3a1917; /* oklch(26.1% 0.053 25) */
+  /* blue: H≈245° */
+  --op-blue-50: #cfdce6; /* oklch(88.8% 0.020 241) */
+  --op-blue-100: #c0d1d5; /* oklch(84.9% 0.019 213) */
+  --op-blue-300: #9fb6c4; /* oklch(76.3% 0.032 235) */
+  --op-blue-350: #7db5e4; /* oklch(75.2% 0.090 245) */
+  --op-blue-425: #5e8ab8; /* oklch(62.0% 0.085 250) */
+  --op-blue-400: #8fa6ba; /* oklch(71.4% 0.039 245) */
+  --op-blue-500: #4f7196; /* oklch(53.8% 0.070 251) */
+  --op-blue-650: #0043a7; /* oklch(41.6% 0.172 260) */
+  --op-blue-700: #2e4a6b; /* oklch(40.3% 0.066 253) */
+  --op-blue-900: #1f2a36; /* oklch(28.0% 0.027 251) */
+  --op-blue-950: #1b2230; /* oklch(25.2% 0.029 264) */
+  /* navy: H≈273° */
+  --op-navy-800: #2e375f; /* oklch(34.9% 0.071 273) */
+  /* neutral: H≈49° */
+  --op-neutral-0: #ffffff; /* oklch(100.0% 0.000 0) */
+  --op-neutral-50: #fbfbfb; /* oklch(98.8% 0.000 0) */
+  --op-neutral-75: #f5f4f3; /* oklch(96.8% 0.002 68) */
+  --op-neutral-100: #f4f3f2; /* oklch(96.5% 0.002 68) */
+  --op-neutral-200: #ece8e7; /* oklch(93.4% 0.005 34) */
+  --op-neutral-300: #dddddd; /* oklch(89.8% 0.000 0) */
+  --op-neutral-400: #bcbcbc; /* oklch(79.5% 0.000 0) */
+  --op-neutral-450: #b5b2b0; /* oklch(76.5% 0.004 56) */
+  --op-neutral-500: #9c9c9c; /* oklch(69.3% 0.000 0) */
+  --op-neutral-550: #8a8888; /* oklch(62.8% 0.002 17) */
+  --op-neutral-600: #6f6e6d; /* oklch(53.9% 0.002 68) */
+  --op-neutral-700: #5c5a59; /* oklch(46.9% 0.003 49) */
+  --op-neutral-800: #3a3838; /* oklch(34.3% 0.003 17) */
+  --op-neutral-850: #333131; /* oklch(31.5% 0.003 17) */
+  --op-neutral-900: #262525; /* oklch(26.6% 0.001 17) */
+  --op-neutral-925: #1a1919; /* oklch(21.5% 0.002 17) */
+  --op-neutral-950: #121111; /* oklch(17.9% 0.002 17) */
+  --op-neutral-975: #0e0d0d; /* oklch(16.0% 0.002 17) */
+  --op-neutral-ink: #0a0a0a; /* oklch(14.5% 0.000 0) */
+  /* brand: H≈167° */
+  --op-brand-50: #e8fdf7; /* oklch(97.7% 0.023 177) */
+  --op-brand-100: #c7faec; /* oklch(94.6% 0.055 176) */
+  --op-brand-300: #4eeec1; /* oklch(85.5% 0.147 170) */
+  --op-brand-400: #16dfa7; /* oklch(80.3% 0.163 166) */
+  --op-brand-450: #34d3a1; /* oklch(77.5% 0.147 167) */
+  --op-brand-500: #11af83; /* oklch(67.0% 0.135 167) */
+  --op-brand-600: #0e956f; /* oklch(59.5% 0.120 167) */
+  --op-brand-700: #0c795a; /* oklch(51.3% 0.102 167) */
+  --op-brand-800: #095842; /* oklch(41.0% 0.080 168) */
+  --op-brand-900: #063c2d; /* oklch(31.8% 0.060 169) */
+  --op-brand-950: #0f2a22; /* oklch(26.1% 0.037 172) */
+  /* coral: H≈40° */
+  --op-coral-300: #f5a78b; /* oklch(79.8% 0.101 41) */
+  /* mustard: H≈109° */
+  --op-mustard-300: #b7b85a; /* oklch(76.2% 0.118 109) */
+  /* lavender: H≈298° */
+  --op-lavender-300: #c9b7f2; /* oklch(81.5% 0.084 299) */
+  /* Категорійні тони КС (tint-*), не статуси */
+  --op-tint-sand-light: #e7dfcf;
+  --op-tint-sand-dark: #3a3226;
+  --op-tint-mint-light: #e1f4eb;
+  --op-tint-mint-dark: #163126;
+  --op-tint-lavender-light: #efecff;
+  --op-tint-lavender-dark: #262340;
+  --op-tint-sky-light: #ccdade;
+  --op-tint-sky-dark: #1f2c30;
+  --op-tint-peach-light: #f4e6db;
+  --op-tint-peach-dark: #3a2a20;
+  --op-tint-rose-light: #d8a5a5;
+  --op-tint-rose-dark: #3d2424;
+  /* Радіуси (DD-20), px→rem */
+  --op-radius-0: 0;
+  --op-radius-2: 0.125rem; /* КС radius-xs (ЧЕКПОЙНТ 4 · 2A) */
+  --op-radius-4: 0.25rem;
+  --op-radius-8: 0.5rem;
+  --op-radius-12: 0.75rem;
+  --op-radius-16: 1rem;
+  --op-radius-20: 1.25rem;
+  --op-radius-28: 1.75rem;
+  --op-radius-32: 2rem;
+  --op-radius-48: 3rem;
+  --op-radius-full: 9999px;
+  /* Розміри (DD-22/25, КС): контролі 32/36/44, рядки 32/40/48, дотик 44 */
+  --op-control-compact: 2rem;
+  --op-control-default: 2.25rem;
+  --op-control-comfortable: 2.75rem;
+  --op-row-compact: 2rem;
+  --op-row-default: 2.5rem;
+  --op-row-comfortable: 3rem;
+  --op-touch-min: 2.75rem;
+  --op-icon-sm: 1rem;
+  --op-icon-md: 1.25rem;
+  --op-icon-lg: 1.5rem;
+  --op-avatar-sm: 1.5rem;
+  --op-avatar-md: 2rem;
+  --op-avatar-lg: 3rem;
+  --op-avatar-xl: 5rem;
+  --op-avatar-xl-phone: 4rem; /* ЧЕКПОЙНТ 5 · 16A: фото профілю «Армії» 80 / 64 (прототип H6/C3); КС — avatar-lg 48 */
+  --op-border-1: 1px;
+  --op-border-2: 2px;
+  --op-focus-width: 2px;
+  --op-focus-offset: 2px;
+  --op-measure-max: 68ch;
+  /* Рух (КС 120/200/320, тільки ease-out; вихід швидший за вхід) */
+  --op-duration-fast: 120ms;
+  --op-duration-base: 200ms;
+  --op-duration-slow: 320ms;
+  --op-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --op-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  /* Шари */
+  --op-z-dropdown: 1000;
+  --op-z-sticky: 1100;
+  --op-z-overlay: 1200;
+  --op-z-modal: 1300;
+  --op-z-toast: 1400;
+  --op-opacity-disabled: 0.45;
+}
+
+/* ============ 2. СЕМАНТИКА × бренд (шрифти, накреслення, ролі радіусів: overlay = меню/поповер/тост, modal = діалог/шторка, item = пункт меню/опція всередині перекриття).
+   КС-блоки = система КС 1:1 (директива власника 2026-10-20): ролі радіусів з bundle.css (кнопка radius-md 8, поле radius-sm 4, картка 8, меню/поповер/тост 8, модал 12, пункт меню 4; секція — у КС немає, 0 за приміткою «секції лендінгу квадратні»).
+   Імена --op-r-*, --op-shadow-*, --op-font-* навмисно з префіксом (5B): голі --radius-… / --shadow-… / --font-… є просторами імен теми Tailwind v4 і в @theme inline дали б цикл --x: var(--x). ============ */
+[data-brand='army'] {
+  --op-font-sans: 'UAF Sans', 'UAF Sans Fallback', 'Fixel Text', system-ui, sans-serif;
+  --op-font-display: 'UAF Sans', 'UAF Sans Fallback', 'Fixel Text', system-ui, sans-serif;
+  --weight-h1: 700;
+  --weight-h2: 500;
+  --weight-h3: 600;
+  --weight-stat: 700;
+  --weight-label: 500;
+  --op-r-control: var(--op-radius-full);
+  --op-r-field: var(--op-radius-12);
+  --op-r-chip: var(--op-radius-full);
+  --op-r-badge: var(--op-radius-8);
+  --op-r-card: var(--op-radius-20);
+  --op-r-section: var(--op-radius-28);
+  --op-r-overlay: var(--op-radius-28);
+  --op-r-modal: var(--op-radius-28);
+  --op-r-item: var(--op-radius-full);
+  --radius: var(
+    --op-r-field
+  ); /* shadcn: базовий радіус для rounded-* утиліт (не колідує з простором імен --radius-* Tailwind) */
+  --op-text-stat: 3rem;
+  --op-text-stat-lh: 1;
+  --op-text-stat-ls: -0.02em;
+  --op-text-h1: 2.25rem;
+  --op-text-h1-lh: 1.15;
+  --op-text-h1-ls: -0.01em;
+  --op-text-h1-mobile: 1.75rem;
+  --op-text-h1-mobile-lh: 1.2;
+  --op-text-h1-mobile-ls: 0;
+  --op-text-h2: 1.5rem;
+  --op-text-h2-lh: 1.25;
+  --op-text-h2-ls: 0;
+  --op-text-h3: 1.125rem;
+  --op-text-h3-lh: 1.3;
+  --op-text-h3-ls: 0;
+  --op-text-body: 1rem;
+  --op-text-body-lh: 1.5;
+  --op-text-body-ls: 0;
+  --op-text-meta: 0.875rem;
+  --op-text-meta-lh: 1.45;
+  --op-text-meta-ls: 0;
+  --op-text-caption: 0.75rem;
+  --op-text-caption-lh: 1.35;
+  --op-text-caption-ls: 0;
+  --op-text-label: 0.8125rem;
+  --op-text-label-lh: 1.3;
+  --op-text-label-ls: 0;
+  --btn-weight-primary: 600; /* 7A */
+  --op-r-check: var(--op-radius-4); /* ЧЕКПОЙНТ 4 · 1A: квадрат 4, як C1 */
+}
+[data-brand='ks'] {
+  --op-font-sans: 'CY Grotesk Key', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --op-font-display: 'CY Grotesk Grand', 'Arial Black', system-ui, sans-serif;
+  --weight-h1: 600;
+  --weight-h2: 600;
+  --weight-h3: 600;
+  --weight-stat: 800;
+  --weight-label: 500;
+  --op-r-control: var(--op-radius-8);
+  --op-r-field: var(--op-radius-4);
+  --op-r-chip: var(--op-radius-full);
+  --op-r-badge: var(--op-radius-4);
+  --op-r-card: var(--op-radius-8);
+  --op-r-section: var(--op-radius-0);
+  --op-r-overlay: var(--op-radius-8);
+  --op-r-modal: var(--op-radius-12);
+  --op-r-item: var(--op-radius-4);
+  --radius: var(
+    --op-r-field
+  ); /* shadcn: базовий радіус для rounded-* утиліт (не колідує з простором імен --radius-* Tailwind) */
+  --op-text-stat: 3rem;
+  --op-text-stat-lh: 1;
+  --op-text-stat-ls: -0.02em;
+  --op-text-h1: 1.75rem;
+  --op-text-h1-lh: 1.2;
+  --op-text-h1-ls: -0.01em;
+  --op-text-h1-mobile: 1.75rem;
+  --op-text-h1-mobile-lh: 1.2;
+  --op-text-h1-mobile-ls: -0.01em;
+  --op-text-h2: 1.5rem;
+  --op-text-h2-lh: 1.25;
+  --op-text-h2-ls: 0;
+  --op-text-h3: 1.25rem;
+  --op-text-h3-lh: 1.3;
+  --op-text-h3-ls: 0;
+  --op-text-body: 1rem;
+  --op-text-body-lh: 1.5;
+  --op-text-body-ls: 0;
+  --op-text-meta: 0.875rem;
+  --op-text-meta-lh: 1.45;
+  --op-text-meta-ls: 0;
+  --op-text-caption: 0.75rem;
+  --op-text-caption-lh: 1.35;
+  --op-text-caption-ls: 0;
+  --op-text-label: 0.8125rem;
+  --op-text-label-lh: 1.3;
+  --op-text-label-ls: 0;
+  --btn-weight-primary: 500; /* КС .cf-btn: 500 (bundle.css:104) */
+  --op-r-check: var(--op-radius-2); /* КС .cf-checkbox: radius-xs */
+}
+
+/* ============ 3. СЕМАНТИКА × бренд × тема (кольори, тіні, скрім) ============ */
+:root,
+[data-brand='army'][data-theme='light'] {
+  color-scheme: light;
+  --background: var(--op-olive-100); /* #F1EFE6 */
+  --foreground: var(--op-olive-950); /* #23221E */
+  --card: var(--op-olive-50); /* #FAF9F3 */
+  --card-foreground: var(--op-olive-950); /* #23221E */
+  --popover: var(--op-olive-50); /* #FAF9F3 */
+  --popover-foreground: var(--op-olive-950); /* #23221E */
+  --muted: var(--op-olive-150); /* #E7E3D4 */
+  --muted-foreground: var(--op-olive-650); /* #5A5952 */
+  --foreground-tertiary: var(--op-olive-600); /* #636053 */
+  --foreground-disabled: var(--op-olive-500); /* #7D7764 */
+  --border: var(--op-olive-200); /* #D3CDB6 */
+  --input: var(--op-olive-500); /* #7D7764 */
+  --ring: var(--op-olive-950); /* #23221E */
+  --primary: var(--op-orange-500); /* #F39200 */
+  --primary-foreground: var(--op-olive-950); /* #23221E */
+  --primary-border: var(--op-orange-500); /* #F39200 */
+  --primary-hover: var(--op-orange-525); /* #DF8600 */
+  --primary-pressed: var(--op-orange-550); /* #CF7C00 */
+  --primary-border-hover: var(--op-orange-525); /* #DF8600 */
+  --primary-border-pressed: var(--op-orange-550); /* #CF7C00 */
+  --secondary: var(--op-sand-100); /* #EFDBB2 */
+  --secondary-foreground: var(--op-olive-950); /* #23221E */
+  --secondary-hover: var(--op-sand-150); /* #DFCCA3 */
+  --secondary-pressed: var(--op-sand-200); /* #D2BF97 */
+  --accent: var(--op-sand-100); /* #EFDBB2 */
+  --accent-foreground: var(--op-olive-950); /* #23221E */
+  --popover-border: var(--op-olive-50); /* #FAF9F3 */
+  --destructive: var(--op-red-625); /* #B5261F */
+  --destructive-foreground: var(--op-olive-0); /* #FFFFFF */
+  --status-success-text: var(--op-green-700); /* #3F6B2A */
+  --status-success-bg: var(--op-green-50); /* #DCE8CC */
+  --status-success-border: var(--op-green-500); /* #5F8A40 */
+  --status-warning-text: var(--op-amber-700); /* #7A5200 */
+  --status-warning-bg: var(--op-amber-100); /* #F6E3A3 */
+  --status-warning-border: var(--op-amber-500); /* #B7791F */
+  --status-danger-text: var(--op-red-700); /* #A32B25 */
+  --status-danger-bg: var(--op-red-100); /* #F3D9D5 */
+  --status-danger-border: var(--op-red-500); /* #D8433B */
+  --status-info-text: var(--op-blue-700); /* #2E4A6B */
+  --status-info-bg: var(--op-blue-50); /* #CFDCE6 */
+  --status-info-border: var(--op-blue-500); /* #4F7196 */
+  --chart-1: var(--op-blue-650); /* #0043A7 */
+  --chart-2: var(--op-orange-600); /* #C37400 */
+  --chart-3: var(--op-green-600); /* #3E7400 */
+  --chart-4: var(--op-blue-425); /* #5E8AB8 */
+  --chart-5: var(--op-olive-450); /* #756635 */
+  /* --chart-6: немає в цьому бренді (?) */
+  /* --chart-grid: немає в цьому бренді (?) */
+  --op-shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.18);
+  --op-shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.18);
+  --op-shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.18);
+  --scrim: rgba(35, 34, 30, 0.6);
+  /* ЧЕКПОЙНТ 4 · 2A — ролі S3 (аліаси наявних примітивів; КС = text-link, border-brand, action-ink, action-ink-hover, text-inverse) */
+  --link: var(--op-olive-950);
+  --border-accent: var(--op-olive-950);
+  --inverse: var(--op-olive-950);
+  --inverse-foreground: var(--op-olive-100);
+  --inverse-hover: var(--op-olive-750);
+  /* ЧЕКПОЙНТ 4 · 3A — стани руйнівної кнопки фільтром яскравості, як КС .cf-btn--danger (виняток компонента) */
+  --btn-destructive-hover: brightness(0.93);
+  --btn-destructive-pressed: brightness(0.86);
+  /* S3 · затверджено 21.10: скелет (хвиля 1,4 с, лише transform; вимикається reduced-motion і data-motion="off") */
+  --skeleton: var(--border);
+  --skeleton-shine: var(--card);
+}
+[data-brand='army'][data-theme='dark'] {
+  color-scheme: dark;
+  --background: var(--op-olive-950); /* #23221E */
+  --foreground: var(--op-sand-100); /* #EFDBB2 */
+  --card: var(--op-olive-850); /* #34322C */
+  --card-foreground: var(--op-sand-100); /* #EFDBB2 */
+  --popover: var(--op-olive-850); /* #34322C */
+  --popover-foreground: var(--op-sand-100); /* #EFDBB2 */
+  --muted: var(--op-olive-900); /* #2C2A25 */
+  --muted-foreground: var(--op-olive-300); /* #B8AC8F */
+  --foreground-tertiary: var(--op-olive-350); /* #AEA893 */
+  --foreground-disabled: var(--op-olive-400); /* #8F8972 */
+  --border: var(--op-olive-725); /* #4A4530 */
+  --input: var(--op-olive-400); /* #8F8972 */
+  --ring: var(--op-orange-500); /* #F39200 */
+  --primary: var(--op-olive-850); /* #34322C */
+  --primary-foreground: var(--op-orange-500); /* #F39200 */
+  --primary-border: var(--op-orange-500); /* #F39200 */
+  --primary-hover: var(--op-olive-750); /* #3F3C33 */
+  --primary-pressed: var(--op-olive-900); /* #2C2A25 */
+  --primary-border-hover: var(--op-orange-500); /* #F39200 */
+  --primary-border-pressed: var(--op-orange-500); /* #F39200 */
+  --secondary: var(--op-olive-700); /* #4D4634 */
+  --secondary-foreground: var(--op-sand-100); /* #EFDBB2 */
+  --secondary-hover: var(--op-olive-675); /* #564F3D */
+  --secondary-pressed: var(--op-olive-750); /* #3F3C33 */
+  --accent: var(--op-olive-750); /* #3F3C33 */
+  --accent-foreground: var(--op-sand-100); /* #EFDBB2 */
+  --popover-border: var(--op-olive-400); /* #8F8972 */
+  --destructive: var(--op-red-350); /* #E8766E */
+  --destructive-foreground: var(--op-olive-950); /* #23221E */
+  --status-success-text: var(--op-green-300); /* #9BC27A */
+  --status-success-bg: var(--op-green-900); /* #2A3324 */
+  --status-success-border: var(--op-green-400); /* #6E9A4F */
+  --status-warning-text: var(--op-amber-300); /* #E9C95A */
+  --status-warning-bg: var(--op-amber-900); /* #3A3214 */
+  --status-warning-border: var(--op-amber-500); /* #B7791F */
+  --status-danger-text: var(--op-red-300); /* #F08A83 */
+  --status-danger-bg: var(--op-red-900); /* #3D211E */
+  --status-danger-border: var(--op-red-300); /* #F08A83 */
+  --status-info-text: var(--op-blue-300); /* #9FB6C4 */
+  --status-info-bg: var(--op-blue-900); /* #1F2A36 */
+  --status-info-border: var(--op-blue-400); /* #8FA6BA */
+  --chart-1: var(--op-sand-50); /* #FFEFCD */
+  --chart-2: var(--op-orange-500); /* #F39200 */
+  --chart-3: var(--op-green-450); /* #61943D */
+  --chart-4: var(--op-blue-350); /* #7DB5E4 */
+  --chart-5: var(--op-olive-375); /* #918764 */
+  /* --chart-6: немає в цьому бренді (?) */
+  /* --chart-grid: немає в цьому бренді (?) */
+  --op-shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.18);
+  --op-shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.18);
+  --op-shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.18);
+  --scrim: rgba(0, 0, 0, 0.7);
+  /* ЧЕКПОЙНТ 4 · 2A — ролі S3 (аліаси наявних примітивів; КС = text-link, border-brand, action-ink, action-ink-hover, text-inverse) */
+  --link: var(--op-sand-100);
+  --border-accent: var(--op-orange-500);
+  --inverse: var(--op-sand-100);
+  --inverse-foreground: var(--op-olive-950);
+  --inverse-hover: var(--op-sand-150);
+  /* ЧЕКПОЙНТ 4 · 3A — стани руйнівної кнопки фільтром яскравості, як КС .cf-btn--danger (виняток компонента) */
+  --btn-destructive-hover: brightness(1.07);
+  --btn-destructive-pressed: brightness(1.14);
+  /* S3 · затверджено 21.10: скелет (хвиля 1,4 с, лише transform; вимикається reduced-motion і data-motion="off") */
+  --skeleton: var(--muted);
+  --skeleton-shine: var(--secondary-hover);
+}
+[data-brand='ks'][data-theme='light'] {
+  color-scheme: light;
+  --background: var(--op-neutral-50); /* #FBFBFB */
+  --foreground: var(--op-neutral-ink); /* #0A0A0A */
+  --card: var(--op-neutral-0); /* #FFFFFF */
+  --card-foreground: var(--op-neutral-ink); /* #0A0A0A */
+  --popover: var(--op-neutral-0); /* #FFFFFF */
+  --popover-foreground: var(--op-neutral-ink); /* #0A0A0A */
+  --muted: var(--op-neutral-100); /* #F4F3F2 */
+  --muted-foreground: var(--op-neutral-700); /* #5C5A59 */
+  --foreground-tertiary: var(--op-neutral-600); /* #6F6E6D */
+  --foreground-disabled: var(--op-neutral-550); /* #8A8888 */
+  --border: var(--op-neutral-300); /* #DDDDDD */
+  --input: var(--op-neutral-550); /* #8A8888 */
+  --ring: var(--op-brand-700); /* #0C795A */
+  --primary: var(--op-brand-500); /* #11AF83 */
+  --primary-foreground: var(--op-neutral-ink); /* #0A0A0A */
+  --primary-border: var(--op-brand-500); /* #11AF83 */
+  --primary-hover: var(--op-brand-600); /* #0E956F */
+  --primary-pressed: var(--op-brand-800); /* #095842 */
+  --primary-border-hover: var(--op-brand-600); /* #0E956F */
+  --primary-border-pressed: var(--op-brand-800); /* #095842 */
+  --secondary: var(--op-neutral-0); /* #FFFFFF */
+  --secondary-foreground: var(--op-neutral-ink); /* #0A0A0A */
+  --secondary-hover: var(--op-neutral-100); /* #F4F3F2 */
+  --secondary-pressed: var(--op-neutral-100); /* #F4F3F2 */
+  --accent: var(--op-brand-50); /* #E8FDF7 */
+  --accent-foreground: var(--op-brand-700); /* #0C795A */
+  --popover-border: var(--op-neutral-300); /* #DDDDDD */
+  --destructive: var(--op-red-600); /* #B0302A */
+  --destructive-foreground: var(--op-neutral-0); /* #FFFFFF */
+  --status-success-text: var(--op-brand-700); /* #0C795A */
+  --status-success-bg: var(--op-brand-50); /* #E8FDF7 */
+  --status-success-border: var(--op-brand-600); /* #0E956F */
+  --status-warning-text: var(--op-amber-700); /* #7A5200 */
+  --status-warning-bg: var(--op-amber-50); /* #F9E58A */
+  --status-warning-border: var(--op-amber-500); /* #B7791F */
+  --status-danger-text: var(--op-red-700); /* #A32B25 */
+  --status-danger-bg: var(--op-red-50); /* #F8DEDC */
+  --status-danger-border: var(--op-red-500); /* #D8433B */
+  --status-info-text: var(--op-navy-800); /* #2E375F */
+  --status-info-bg: var(--op-blue-100); /* #C0D1D5 */
+  --status-info-border: var(--op-navy-800); /* #2E375F */
+  --chart-1: var(--op-brand-500); /* #11AF83 */
+  --chart-2: var(--op-navy-800); /* #2E375F */
+  --chart-3: var(--op-coral-300); /* #F5A78B */
+  --chart-4: var(--op-mustard-300); /* #B7B85A */
+  --chart-5: var(--op-lavender-300); /* #C9B7F2 */
+  --chart-6: var(--op-neutral-500); /* #9C9C9C */
+  --chart-grid: var(--op-neutral-300); /* #DDDDDD */
+  --op-shadow-overlay: 0 1px 2px rgba(10, 10, 10, 0.06), 0 8px 24px rgba(10, 10, 10, 0.12);
+  --op-shadow-modal: 0 24px 64px rgba(10, 10, 10, 0.18);
+  --op-shadow-sheet: 0 24px 64px rgba(10, 10, 10, 0.18);
+  --scrim: rgba(10, 10, 10, 0.6);
+  /* ЧЕКПОЙНТ 4 · 2A — ролі S3 (аліаси наявних примітивів; КС = text-link, border-brand, action-ink, action-ink-hover, text-inverse) */
+  --link: var(--op-brand-700);
+  --border-accent: var(--op-brand-600);
+  --inverse: var(--op-neutral-ink);
+  --inverse-foreground: var(--op-neutral-0);
+  --inverse-hover: var(--op-neutral-800);
+  /* ЧЕКПОЙНТ 4 · 3A — стани руйнівної кнопки фільтром яскравості, як КС .cf-btn--danger (виняток компонента) */
+  --btn-destructive-hover: brightness(0.93);
+  --btn-destructive-pressed: brightness(0.86);
+  /* S3 · затверджено 21.10: скелет (хвиля 1,4 с, лише transform; вимикається reduced-motion і data-motion="off") */
+  --skeleton: var(--border);
+  --skeleton-shine: var(--card);
+}
+[data-brand='ks'][data-theme='dark'] {
+  color-scheme: dark;
+  --background: var(--op-neutral-950); /* #121111 */
+  --foreground: var(--op-neutral-75); /* #F5F4F3 */
+  --card: var(--op-neutral-925); /* #1A1919 */
+  --card-foreground: var(--op-neutral-75); /* #F5F4F3 */
+  --popover: var(--op-neutral-900); /* #262525 */
+  --popover-foreground: var(--op-neutral-75); /* #F5F4F3 */
+  --muted: var(--op-neutral-975); /* #0E0D0D */
+  --muted-foreground: var(--op-neutral-450); /* #B5B2B0 */
+  --foreground-tertiary: var(--op-neutral-550); /* #8A8888 */
+  --foreground-disabled: var(--op-neutral-600); /* #6F6E6D */
+  --border: var(--op-neutral-850); /* #333131 */
+  --input: var(--op-neutral-600); /* #6F6E6D */
+  --ring: var(--op-brand-500); /* #11AF83 */
+  --primary: var(--op-brand-500); /* #11AF83 */
+  --primary-foreground: var(--op-neutral-ink); /* #0A0A0A */
+  --primary-border: var(--op-brand-500); /* #11AF83 */
+  --primary-hover: var(--op-brand-400); /* #16DFA7 */
+  --primary-pressed: var(--op-brand-300); /* #4EEEC1 */
+  --primary-border-hover: var(--op-brand-400); /* #16DFA7 */
+  --primary-border-pressed: var(--op-brand-300); /* #4EEEC1 */
+  --secondary: var(--op-neutral-925); /* #1A1919 */
+  --secondary-foreground: var(--op-neutral-75); /* #F5F4F3 */
+  --secondary-hover: var(--op-neutral-900); /* #262525 */
+  --secondary-pressed: var(--op-neutral-975); /* #0E0D0D */
+  --accent: var(--op-brand-950); /* #0F2A22 */
+  --accent-foreground: var(--op-brand-400); /* #16DFA7 */
+  --popover-border: var(--op-neutral-850); /* #333131 */
+  --destructive: var(--op-red-300); /* #F08A83 */
+  --destructive-foreground: var(--op-neutral-ink); /* #0A0A0A */
+  --status-success-text: var(--op-brand-450); /* #34D3A1 */
+  --status-success-bg: var(--op-brand-950); /* #0F2A22 */
+  --status-success-border: var(--op-brand-500); /* #11AF83 */
+  --status-warning-text: var(--op-amber-300); /* #E9C95A */
+  --status-warning-bg: var(--op-amber-950); /* #3A2F0C */
+  --status-warning-border: var(--op-amber-300); /* #E9C95A */
+  --status-danger-text: var(--op-red-300); /* #F08A83 */
+  --status-danger-bg: var(--op-red-950); /* #3A1917 */
+  --status-danger-border: var(--op-red-300); /* #F08A83 */
+  --status-info-text: var(--op-blue-300); /* #9FB6C4 */
+  --status-info-bg: var(--op-blue-950); /* #1B2230 */
+  --status-info-border: var(--op-blue-300); /* #9FB6C4 */
+  --chart-1: var(--op-brand-500); /* #11AF83 */
+  --chart-2: var(--op-blue-300); /* #9FB6C4 */
+  --chart-3: var(--op-coral-300); /* #F5A78B */
+  --chart-4: var(--op-mustard-300); /* #B7B85A */
+  --chart-5: var(--op-lavender-300); /* #C9B7F2 */
+  --chart-6: var(--op-neutral-600); /* #6F6E6D */
+  --chart-grid: var(--op-neutral-850); /* #333131 */
+  --op-shadow-overlay: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.55);
+  --op-shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.7);
+  --op-shadow-sheet: 0 24px 64px rgba(0, 0, 0, 0.7);
+  --scrim: rgba(0, 0, 0, 0.7);
+  /* ЧЕКПОЙНТ 4 · 2A — ролі S3 (аліаси наявних примітивів; КС = text-link, border-brand, action-ink, action-ink-hover, text-inverse) */
+  --link: var(--op-brand-500);
+  --border-accent: var(--op-brand-500);
+  --inverse: var(--op-neutral-50);
+  --inverse-foreground: var(--op-neutral-ink);
+  --inverse-hover: var(--op-neutral-200);
+  /* ЧЕКПОЙНТ 4 · 3A — стани руйнівної кнопки фільтром яскравості, як КС .cf-btn--danger (виняток компонента) */
+  --btn-destructive-hover: brightness(0.93);
+  --btn-destructive-pressed: brightness(0.86);
+  /* S3 · затверджено 21.10: скелет (хвиля 1,4 с, лише transform; вимикається reduced-motion і data-motion="off") */
+  --skeleton: var(--muted);
+  --skeleton-shine: var(--secondary-hover);
+}
+
+/* ============ 4. ЩІЛЬНІСТЬ — режим контейнера (DD-25). Перемикається вказівником, не брендом. ============ */
+/* Army (4A): 32 / 36 / 44 */
+:root,
+[data-density='default'] {
+  --control-h: 2.25rem;
+  --row-h: 2.5rem;
+  --pad-y: 0.5rem;
+  --pad-x: 0.75rem;
+  --text-size: 1rem;
+  --control-fs: 1rem;
+}
+[data-density='comfortable'] {
+  --control-h: 2.75rem;
+  --row-h: 3rem;
+  --pad-y: 0.75rem;
+  --pad-x: 1rem;
+  --text-size: 1rem;
+  --control-fs: 1rem;
+}
+/* compact лише для точного вказівника і ширини >600px; інакше падає до default */
+@media (pointer: fine) and (min-width: 601px) {
+  [data-density='compact'] {
+    --control-h: 2rem;
+    --row-h: 2rem;
+    --pad-y: 0.25rem;
+    --pad-x: 0.5rem;
+    --text-size: 1rem;
+    --control-fs: 0.875rem;
+  }
+}
+/* Дотик: ціль не менше 44px незалежно від режиму (DD-22) */
+@media (pointer: coarse) {
+  :root,
+  [data-density] {
+    --control-h: 2.75rem;
+    --row-h: 3rem;
+  }
+}
+/* КС = bundle.css рядки 13–46, 1:1: 28 / 36 / 44, рядки 32 / 40 / 48, кегль 14 / 16 / 16; compact без обмеження вказівником (у КС його немає); на дотику без явної щільності — 44 (README КС) */
+[data-brand='ks'],
+[data-brand='ks'] [data-density='default'],
+[data-brand='ks'][data-density='default'] {
+  --gap: 1rem;
+  --gap-block: 1.5rem;
+  --control-h: 2.25rem;
+  --row-h: 2.5rem;
+  --pad-y: 0.5rem;
+  --pad-x: 0.75rem;
+  --text-size: 1rem;
+  --control-fs: 0.9375rem;
+}
+[data-brand='ks'] [data-density='compact'],
+[data-brand='ks'][data-density='compact'] {
+  --gap: 0.75rem;
+  --gap-block: 1rem;
+  --control-h: 1.75rem;
+  --row-h: 2rem;
+  --pad-y: 0.25rem;
+  --pad-x: 0.5rem;
+  --text-size: 0.875rem;
+  --control-fs: 0.875rem;
+}
+[data-brand='ks'] [data-density='comfortable'],
+[data-brand='ks'][data-density='comfortable'] {
+  --gap: 1.5rem;
+  --gap-block: 2rem;
+  --control-h: 2.75rem;
+  --row-h: 3rem;
+  --pad-y: 0.75rem;
+  --pad-x: 1rem;
+  --text-size: 1rem;
+  --control-fs: 1rem;
+}
+/* ЧЕКПОЙНТ 4 · 5B — КС 1:1 (bundle.css КС, «Сенсорні пристрої без явної щільності»): на дотику 44 px лише там, де щільність не задано явно; з явною data-density — значення режиму КС (DD-22 для КС поступається DD-32). Раніше це правило перекривалось правилом КС вище (T-1). */
+@media (pointer: coarse) {
+  [data-brand='ks']:not([data-density]) {
+    --control-h: 2.75rem;
+    --row-h: 3rem;
+    --pad-x: 1rem;
+  }
+}
+
+/* ============ 5. РУХ: налаштування data-motion (X-19) і системне prefers-reduced-motion (завжди перемагає) ============ */
+[data-motion='off'] {
+  --op-duration-fast: 0ms;
+  --op-duration-base: 0ms;
+  --op-duration-slow: 0ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root,
+  [data-motion='on'] {
+    --op-duration-fast: 0ms;
+    --op-duration-base: 0ms;
+    --op-duration-slow: 0ms;
+  }
+}
+
+/* ============ 6. ВИНЯТКИ КОМПОНЕНТІВ (задокументовані) ============ */
+/* Button (S2-3, 7A): горизонтальний відступ за щільністю; вага головної кнопки 600 (label = 500) */
+:root,
+[data-density='default'] {
+  --btn-pad-x: 1rem;
+}
+[data-density='comfortable'] {
+  --btn-pad-x: 1.25rem;
+}
+@media (pointer: fine) and (min-width: 601px) {
+  [data-density='compact'] {
+    --btn-pad-x: 0.75rem;
+  }
+}
+@media (pointer: coarse) {
+  :root,
+  [data-density] {
+    --btn-pad-x: 1.25rem;
+  }
+}
+/* --btn-weight-primary задано в блоці бренду: Army 600 (7A), КС 500 (bundle.css) */
+/* Графіки (DD-06, 5B): серії розрізняються світлотою (сусідні ≥1,5:1) і штрихом; primary-border = primary у світлих темах — виняток WCAG 1.4.11 (1B), контурний primary заборонено */
+:root {
+  --chart-1-dash: none;
+  --chart-2-dash: 6 3;
+  --chart-3-dash: 2 3;
+  --chart-4-dash: 8 3 2 3;
+  --chart-5-dash: 12 4;
+  --chart-6-dash: 3 3;
+}
+[data-brand='army'] {
+  --chart-grid: var(--border);
+} /* КС: chart-grid — власний токен КС у наборах тем */
+
+/* ЧЕКПОЙНТ 4 · 10B — тривалість сповіщення 5 с для обох брендів (КС = 5 с); помилка не зникає */
+:root {
+  --toast-duration: 5s;
+}
+/* ЧЕКПОЙНТ 4 · 11A — відступ підпис ↔ поле «Армії» 8 px (сітка 4); КС — як у Field системи КС */
+[data-brand='army'] {
+  --field-gap: 0.5rem;
+}
+/* ЧЕКПОЙНТ 4 · 4B — «Армія»: кнопка, недоступна з поясненням, = прозорість --op-opacity-disabled (0.45), як S2; пунктир прототипу C1 не беремо */
+
+/* ============ 7. МЕТРИКИ ШРИФТІВ: запасний шрифт Army під UAF Sans (UPM 1000, asc 920, desc 280, gap 0) ============ */
+@font-face {
+  font-family: 'UAF Sans Fallback';
+  src: local('Fixel Text'), local('Arial');
+  ascent-override: 92%;
+  descent-override: 28%;
+  line-gap-override: 0%;
+}
+
+/* ============ 8. Tailwind v4: семантика → утиліти (bg-background, text-muted-foreground, rounded-card …) ============ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-foreground-tertiary: var(--foreground-tertiary);
+  --color-foreground-disabled: var(--foreground-disabled);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-border: var(--primary-border);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-pressed: var(--primary-pressed);
+  --color-primary-border-hover: var(--primary-border-hover);
+  --color-primary-border-pressed: var(--primary-border-pressed);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-pressed: var(--secondary-pressed);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-popover-border: var(--popover-border);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-status-success-text: var(--status-success-text);
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-success-border: var(--status-success-border);
+  --color-status-warning-text: var(--status-warning-text);
+  --color-status-warning-bg: var(--status-warning-bg);
+  --color-status-warning-border: var(--status-warning-border);
+  --color-status-danger-text: var(--status-danger-text);
+  --color-status-danger-bg: var(--status-danger-bg);
+  --color-status-danger-border: var(--status-danger-border);
+  --color-status-info-text: var(--status-info-text);
+  --color-status-info-bg: var(--status-info-bg);
+  --color-status-info-border: var(--status-info-border);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-grid: var(--chart-grid);
+  --color-scrim: var(--scrim);
+  --shadow-overlay: var(--op-shadow-overlay);
+  --shadow-modal: var(--op-shadow-modal);
+  --shadow-sheet: var(--op-shadow-sheet);
+  --radius-control: var(--op-r-control);
+  --radius-field: var(--op-r-field);
+  --radius-chip: var(--op-r-chip);
+  --radius-badge: var(--op-r-badge);
+  --radius-card: var(--op-r-card);
+  --radius-section: var(--op-r-section);
+  --radius-overlay: var(--op-r-overlay);
+  --radius-modal: var(--op-r-modal);
+  --radius-item: var(--op-r-item);
+  --radius-check: var(--op-r-check);
+  --color-skeleton: var(--skeleton);
+  --color-skeleton-shine: var(--skeleton-shine);
+  --color-link: var(--link);
+  --color-border-accent: var(--border-accent);
+  --color-inverse: var(--inverse);
+  --color-inverse-foreground: var(--inverse-foreground);
+  --color-inverse-hover: var(--inverse-hover);
+  --font-sans: var(--op-font-sans);
+  --font-display: var(--op-font-display);
+  /* кеглі за брендом: Army — прототип C; КС — heading-xl/lg/md, body, body-sm, caption, label, stat-xl (ks-tokens.json type) */
+  --text-stat: var(--op-text-stat);
+  --text-stat--line-height: var(--op-text-stat-lh);
+  --text-stat--letter-spacing: var(--op-text-stat-ls);
+  --text-h1: var(--op-text-h1);
+  --text-h1--line-height: var(--op-text-h1-lh);
+  --text-h1--letter-spacing: var(--op-text-h1-ls);
+  --text-h1-mobile: var(--op-text-h1-mobile);
+  --text-h1-mobile--line-height: var(--op-text-h1-mobile-lh);
+  --text-h1-mobile--letter-spacing: var(--op-text-h1-mobile-ls);
+  --text-h2: var(--op-text-h2);
+  --text-h2--line-height: var(--op-text-h2-lh);
+  --text-h2--letter-spacing: var(--op-text-h2-ls);
+  --text-h3: var(--op-text-h3);
+  --text-h3--line-height: var(--op-text-h3-lh);
+  --text-h3--letter-spacing: var(--op-text-h3-ls);
+  --text-body: var(--op-text-body);
+  --text-body--line-height: var(--op-text-body-lh);
+  --text-body--letter-spacing: var(--op-text-body-ls);
+  --text-meta: var(--op-text-meta);
+  --text-meta--line-height: var(--op-text-meta-lh);
+  --text-meta--letter-spacing: var(--op-text-meta-ls);
+  --text-caption: var(--op-text-caption);
+  --text-caption--line-height: var(--op-text-caption-lh);
+  --text-caption--letter-spacing: var(--op-text-caption-ls);
+  --text-label: var(--op-text-label);
+  --text-label--line-height: var(--op-text-label-lh);
+  --text-label--letter-spacing: var(--op-text-label-ls);
+  --text-label--font-weight: var(--weight-label); /* 8B; КС label Key Medium 500 */
+  --ease-standard: var(--op-ease-standard);
+  --ease-exit: var(--op-ease-exit);
+}
+
+/* Табличні цифри обов’язкові (DD) */
+html {
+  font-feature-settings: 'tnum' 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================================================
+   9. ШАР ЗАСТОСУНКУ — цей репозиторій. Усе нижче можна редагувати; усе вище — лише перенесенням.
+   ============================================================================================ */
+
+/* ---- 9.1 Запасні значення змінних, які tokens.css задає лише в блоках бренду.
+   Потрібні, щоб компонент не «розсипався», якщо <html> випадково лишився без data-brand (у продукті атрибут обов'язковий). ---- */
+:root {
+  --gap: 1rem;
+  --gap-block: 1.5rem;
+  --field-gap: 0.75rem;
+}
+
+/* ---- 9.3 Базові стилі документа (КС: текст CY Grotesk Key 16/1.5, заголовки 600; великі цифри — Grand). ---- */
+@layer base {
+  html {
+    height: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    min-height: 100%;
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--op-font-sans);
+    font-size: var(--op-text-body);
+    line-height: var(--op-text-body-lh);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-wrap: break-word;
+  }
+  /* заголовки — кеглі з токенів бренду; вага КС 600 (--weight-h1/2/3) */
+  h1 {
+    font-size: var(--op-text-h1);
+    line-height: var(--op-text-h1-lh);
+    letter-spacing: var(--op-text-h1-ls);
+    font-weight: var(--weight-h1);
+    text-wrap: balance;
+  }
+  h2 {
+    font-size: var(--op-text-h2);
+    line-height: var(--op-text-h2-lh);
+    letter-spacing: var(--op-text-h2-ls);
+    font-weight: var(--weight-h2);
+  }
+  h3 {
+    font-size: var(--op-text-h3);
+    line-height: var(--op-text-h3-lh);
+    letter-spacing: var(--op-text-h3-ls);
+    font-weight: var(--weight-h3);
+  }
+  h4,
+  h5,
+  h6 {
+    font-size: var(--op-text-body);
+    line-height: var(--op-text-body-lh);
+    font-weight: var(--weight-h3);
+  }
+  /* на телефоні h1 менший (КС: 1.75 в обох випадках — токен однаковий, правило лишаємо для армійського набору) */
+  @media (max-width: 600px) {
+    h1 {
+      font-size: var(--op-text-h1-mobile);
+      line-height: var(--op-text-h1-mobile-lh);
+      letter-spacing: var(--op-text-h1-mobile-ls);
+    }
+  }
+  a {
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+  }
+  a:hover {
+    text-decoration-thickness: 2px;
+  }
+  /* Кільце фокусу — одне на весь застосунок (DD-22): 2 px --ring, відступ 2 px; у полях — без відступу (КС) */
+  :focus-visible {
+    outline: var(--op-focus-width) solid var(--ring);
+    outline-offset: var(--op-focus-offset);
+  }
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline-offset: 0;
+  }
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-foreground);
+  }
+  /* Табличні цифри скрізь (правило «Цифри», README дизайн-системи §5) — продубльовано з tokens.css для надійності */
+  html {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Рух: будь-яка анімація з фіксованим часом (скелет) — під reduced-motion і data-motion="off" зупиняється */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+  [data-motion='off'] *,
+  [data-motion='off'] *::before,
+  [data-motion='off'] *::after {
+    animation: none !important;
+  }
+}
+
+/* ---- 9.4 Скелет (Skeleton): хвиля 1,4 с лише transform на ролях --skeleton / --skeleton-shine (S3, 21.10). ---- */
+@keyframes op-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* ---- 9.5 Прозовий текст висновку AI (Markdownish): відступи й кеглі з токенів, ширина рядка ≤68ch (--op-measure-max). ---- */
+@layer components {
+  .op-prose {
+    max-width: var(--op-measure-max);
+    color: var(--foreground);
+  }
+  .op-prose > * + * {
+    margin-top: 0.75em;
+  }
+  .op-prose p {
+    margin: 0;
+  }
+  .op-prose strong {
+    font-weight: 600;
+  }
+  .op-prose h3,
+  .op-prose h4 {
+    margin: 1.25em 0 0;
+    font-size: var(--op-text-h3);
+    line-height: var(--op-text-h3-lh);
+    font-weight: var(--weight-h3);
+  }
+  .op-prose h3:first-child,
+  .op-prose h4:first-child {
+    margin-top: 0;
+  }
+  .op-prose ul,
+  .op-prose ol {
+    margin: 0;
+    padding-left: 1.25rem;
+    display: grid;
+    gap: 0.25rem;
+  }
+  .op-prose ul {
+    list-style: disc;
+  }
+  .op-prose ol {
+    list-style: decimal;
+  }
+  .op-prose li::marker {
+    color: var(--muted-foreground);
+  }
+
+  /* Таблиця КС (.cf-table): components.md §2. На ≤640 px рядки стають картками, підпис — з data-label. */
+  .dt {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--text-size);
+    line-height: 1.4;
+    color: var(--foreground);
+  }
+  .dt th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    height: 2.5rem;
+    padding: 0 var(--pad-x);
+    text-align: left;
+    white-space: nowrap;
+    background: var(--muted);
+    color: var(--foreground-tertiary);
+    font-size: var(--op-text-caption);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+  }
+  .dt td {
+    height: var(--row-h);
+    padding: 0.5rem var(--pad-x);
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border);
+  }
+  .dt tbody tr:last-child td {
+    border-bottom: 0;
+  }
+  .dt .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .dt .row-link {
+    font-weight: 500;
+    color: inherit;
+    text-decoration: none;
+  }
+  .dt .row-link:hover {
+    color: var(--link);
+    text-decoration: underline;
+  }
+  @media (hover: hover) {
+    .dt tbody tr:hover > td {
+      background: var(--secondary-hover);
+    }
+  }
+  @media (max-width: 640px) {
+    .dt thead {
+      display: none;
+    }
+    .dt,
+    .dt tbody {
+      display: block;
+    }
+    .dt tr {
+      position: relative;
+      display: grid;
+      gap: 0.25rem 0.75rem;
+      padding: 0.75rem var(--pad-x);
+      border-bottom: 1px solid var(--border);
+    }
+    .dt tbody tr:last-child {
+      border-bottom: 0;
+    }
+    .dt td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      height: auto;
+      padding: 0;
+      border: 0;
+      font-size: var(--op-text-meta);
+    }
+    .dt td[data-label]::before {
+      content: attr(data-label);
+      font-size: var(--op-text-caption);
+      color: var(--foreground-tertiary);
+    }
+    .dt td.dt-title {
+      font-size: var(--text-size);
+      display: block;
+    }
+    .dt td.dt-title[data-label]::before {
+      content: none;
+    }
+    .dt .row-link::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+    .dt td.dt-actions {
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+    .dt [data-priority='2'],
+    .dt [data-priority='3'] {
+      display: none;
+    }
+  }
+  @media (max-width: 900px) {
+    .dt [data-priority='3'] {
+      display: none;
+    }
+  }
+}
+
+/* ---- 9.5a Чекбокс і радіо КС (.cf-checkbox / .cf-radio 1:1, bundle.css КС): 18 px, межа input, обране — primary;
+   галочка — маска SVG кольором primary-foreground; помилка — межа status-danger-border (aria-invalid). Зріз 1 (C1 згоди, опитувальник). ---- */
+@layer components {
+  .op-check,
+  .op-radio {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    flex: none;
+    border: var(--op-border-1) solid var(--input);
+    background: var(--card);
+    display: inline-grid;
+    place-content: center;
+    cursor: pointer;
+    transition:
+      background-color var(--op-duration-fast) var(--op-ease-standard),
+      border-color var(--op-duration-fast) var(--op-ease-standard);
+  }
+  .op-check {
+    border-radius: var(--op-r-check);
+  }
+  .op-radio {
+    border-radius: 50%;
+  }
+  .op-check:hover,
+  .op-radio:hover {
+    border-color: var(--muted-foreground);
+  }
+  .op-check:checked,
+  .op-radio:checked {
+    background: var(--primary);
+    border-color: var(--primary);
+  }
+  .op-check:checked::before {
+    content: '';
+    width: 12px;
+    height: 12px;
+    background: var(--primary-foreground);
+    mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>")
+      center / contain no-repeat;
+  }
+  .op-radio:checked::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--primary-foreground);
+  }
+  .op-check[aria-invalid='true'],
+  .op-radio[aria-invalid='true'] {
+    border-color: var(--status-danger-border);
+  }
+  .op-check:disabled,
+  .op-radio:disabled {
+    cursor: default;
+  }
+  .op-check:focus-visible,
+  .op-radio:focus-visible {
+    outline: var(--op-focus-width) solid var(--ring);
+    outline-offset: var(--op-focus-offset);
+  }
+}
+
+/* ---- 9.5b Каскад появи карток хабу C2 (50C, X-19): opacity + translateY 8 px, крок 60 мс, лише при <html data-motion="on">;
+   prefers-reduced-motion і data-motion="off" дають 0 с (блок 5 tokens.css і правило в 9.3). ---- */
+@keyframes op-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+[data-motion='on'] .op-rise > * {
+  animation: op-rise var(--op-duration-slow) var(--op-ease-standard) both;
+}
+[data-motion='on'] .op-rise > :nth-child(2) {
+  animation-delay: 60ms;
+}
+[data-motion='on'] .op-rise > :nth-child(3) {
+  animation-delay: 120ms;
+}
+[data-motion='on'] .op-rise > :nth-child(4) {
+  animation-delay: 180ms;
+}
+[data-motion='on'] .op-rise > :nth-child(5) {
+  animation-delay: 240ms;
+}
+[data-motion='on'] .op-rise > :nth-child(n + 6) {
+  animation-delay: 300ms;
+}
+
+/* ---- 9.6 React Flow (@xyflow/react v12) — лише кольори й радіуси, поведінка не чіпається.
+   Задаємо змінні БЕЗ суфікса -default: бібліотека читає var(--xy-…, var(--xy-…-default)), а її власні *-default
+   на .react-flow підвантажуються після index.css і перекривали наші (контроли в темній були світлі — зріз 4).
+   Вузол: card + межа input (3.52 / 3.45 проти card), вибраний — межа border-accent + кільце ring (як фокус у всьому застосунку);
+   ребра — muted-foreground (6.63 / 8.94 проти ґрунту); ручки — primary на межі card; фон крапками — input (щоб крапки читались у темній).
+   Перевірити назви змінних проти встановленої версії (@xyflow/react/dist/style.css). ---- */
+.react-flow {
+  --xy-background-color: var(--background);
+  --xy-background-pattern-dots-color: var(--border);
+  --xy-background-pattern-lines-color: var(--border);
+  --xy-background-pattern-cross-color: var(--border);
+
+  --xy-edge-stroke: var(--muted-foreground);
+  --xy-edge-stroke-width: 1.5;
+  --xy-edge-stroke-selected: var(--border-accent);
+  --xy-connectionline-stroke: var(--muted-foreground);
+  --xy-connectionline-stroke-width: 1.5;
+  --xy-edge-label-background-color: var(--card);
+  --xy-edge-label-color: var(--foreground);
+
+  --xy-node-background-color: var(--card);
+  --xy-node-color: var(--foreground);
+  --xy-node-border: 1px solid var(--input);
+  --xy-node-border-radius: var(--op-r-card);
+  --xy-node-boxshadow-hover: none;
+  --xy-node-boxshadow-selected: 0 0 0 2px var(--ring);
+  --xy-node-group-background-color: var(--muted);
+
+  --xy-handle-background-color: var(--primary);
+  --xy-handle-border-color: var(--card);
+
+  --xy-selection-background-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  --xy-selection-border: 1px dashed var(--border-accent);
+
+  --xy-controls-button-background-color: var(--popover);
+  --xy-controls-button-background-color-hover: var(--secondary-hover);
+  --xy-controls-button-color: var(--foreground);
+  --xy-controls-button-color-hover: var(--foreground);
+  --xy-controls-button-border-color: var(--popover-border);
+  --xy-controls-box-shadow: var(--op-shadow-overlay);
+
+  --xy-minimap-background-color: var(--card);
+  --xy-minimap-mask-background-color: color-mix(in srgb, var(--background) 70%, transparent);
+  --xy-minimap-node-background-color: var(--muted);
+  --xy-minimap-node-stroke-color: var(--input);
+
+  --xy-attribution-background-color: color-mix(in srgb, var(--card) 80%, transparent);
+  --xy-resize-background-color: var(--primary);
+}
+/* стрілки ребер: React Flow пише колір маркера атрибутом — CSS-змінна в атрибуті не працює, тож перекриваємо стилем.
+   У PromptCanvas markerEnd лишається { type: MarkerType.ArrowClosed } без color — колір дає це правило. */
+.react-flow__arrowhead * {
+  fill: var(--muted-foreground);
+  stroke: var(--muted-foreground);
+}
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:focus .react-flow__edge-path,
+.react-flow__edge:focus-visible .react-flow__edge-path {
+  stroke: var(--border-accent);
+}
+.react-flow__controls {
+  border-radius: var(--op-r-overlay);
+  overflow: hidden;
+}
+.react-flow__controls-button {
+  border-bottom: 1px solid var(--border);
+  width: var(--control-h);
+  height: var(--control-h);
+} /* ціль ≥44 на дотику (K-4) */
+.react-flow__controls-button svg {
+  fill: currentColor;
+}
+.react-flow__handle {
+  width: 10px;
+  height: 10px;
+  border-width: 2px;
+}
+.react-flow__node:focus-visible {
+  outline: var(--op-focus-width) solid var(--ring);
+  outline-offset: var(--op-focus-offset);
+}
+.react-flow__attribution a {
+  color: var(--muted-foreground);
+}
+
+/* ---- 9.7 Контроль міграції (увімкнено): палітри Tailwind за замовчуванням вимкнені — лише ролі дизайн-системи. ---- */
+@theme {
+  --color-slate-*: initial;
+  --color-gray-*: initial;
+  --color-zinc-*: initial;
+  --color-neutral-*: initial;
+  --color-stone-*: initial;
+  --color-emerald-*: initial;
+  --color-green-*: initial;
+  --color-amber-*: initial;
+  --color-yellow-*: initial;
+  --color-red-*: initial;
+  --color-rose-*: initial;
+  --color-blue-*: initial;
+  --color-sky-*: initial;
+  --color-indigo-*: initial;
+}

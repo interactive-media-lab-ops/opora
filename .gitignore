@@ -1,0 +1,9 @@
+.DS_Store
+__MACOSX/
+Thumbs.db
+.venv/
+.ruff_cache/
+__pycache__/
+node_modules/
+_backup-before-cleanup-*.tgz
+*.log

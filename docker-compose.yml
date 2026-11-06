@@ -1,0 +1,73 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: opora
+      POSTGRES_PASSWORD: opora
+      POSTGRES_DB: opora
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opora"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    command: >
+      sh -c "alembic upgrade head &&
+             python -m app.seed &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://opora:opora@postgres:5432/opora
+      REDIS_URL: redis://redis:6379/0
+      STORAGE_DIR: /storage/audio
+    volumes:
+      - ./storage/audio:/storage/audio
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8765:8000"
+
+  worker:
+    build: ./backend
+    command: celery -A app.tasks.celery_app:celery worker --loglevel=info --pool=threads --concurrency=4
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://opora:opora@postgres:5432/opora
+      REDIS_URL: redis://redis:6379/0
+      STORAGE_DIR: /storage/audio
+    volumes:
+      - ./storage/audio:/storage/audio
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build: ./frontend
+    ports:
+      - "8090:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
